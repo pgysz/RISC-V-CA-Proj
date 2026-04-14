@@ -1,0 +1,43 @@
+// ==========================================
+// TASK A: EDGE DETECTOR + 50% SLOWER
+// ==========================================
+
+// _start
+@00 20000493 // addi x9,  x0, 512
+@01 30000913 // addi x18, x0, 768
+@02 00000593 // addi x11, x0, 0    | x11 = "Previous Switch State"
+
+// POLL_SWITCHES
+@03 00092503 // poll: lw x10, 0(x18) | x10 = Current Switch
+@04 FE050EE3 // beq  x10, x0, -4     | Loop if switch is 0
+@05 FEB50CE3 // beq  x10, x11, -8    | Loop if switch hasn't changed!
+
+// CAPTURE VALUE
+@06 00050413 // addi x8,  x10, 0     | Capture for countdown
+@07 00050593 // addi x11, x10, 0     | Update Previous = Current
+
+// COUNTDOWN_LOOP
+@08 02040463 // loop: beq x8, x0, +40 | If 0, jump to DONE (@12)
+@09 0084A023 // sw   x8,  0(x9)
+
+// INLINED DELAY (50% Slower)
+@0A 7D000313 // addi x6, x0, 2000  | Outer Loop
+@0B 75300393 // addi x7, x0, 1875  | Inner loop 1.5x
+@0C FFF38393 // delay2: addi x7, x7, -1
+@0D FE039EE3 // bne  x7, x0, -4    | Inner Loop
+@0E FFF30313 // addi x6, x6, -1    
+@0F FE0318E3 // bne  x6, x0, -16   | Outer Loop (Jumps to @0B)
+
+// DECREMENT PHASE
+@10 FFF40413 // addi x8, x8, -1
+@11 FC000EE3 // beq  x0, x0, -36   | Jump exactly to @08
+
+// COUNTDOWN_DONE
+@12 0004A023 // done: sw x0, 0(x9) | Clear LEDs
+@13 FC0000E3 // beq  x0, x0, -64   | Jump perfectly back to poll (@03)
+
+// FILL REMAINDER WITH NOPs
+@14 00000013
+@15 00000013
+@16 00000013
+@17 00000013

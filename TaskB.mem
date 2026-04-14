@@ -1,0 +1,63 @@
+// ==========================================
+// TASK B: CUSTOM INSTRUCTION VALIDATION TEST
+// ==========================================
+
+// _start 
+@00 20000493 // addi x9,  x0, 512
+@01 30000913 // addi x18, x0, 768
+
+// POLL_SWITCHES
+@02 00092503 // lw   x10, 0(x18)
+
+// ==========================================
+// TEST 1: SLT (Switch 1) -> Outputs 1
+// ==========================================
+@03 00100293 // addi x5,  x0, 1
+@04 00551C63 // bne  x10, x5, +24  (FIXED: Skips to Test 2 at @0A)
+@05 00A00293 // addi x5,  x0, 10
+@06 01400313 // addi x6,  x0, 20
+@07 0062A433 // slt  x8,  x5, x6   (10 < 20, so x8 = 1)
+@08 0084A023 // sw   x8,  0(x9)    (LEDs = 1)
+@09 F20002E3 // beq  x0,  x0, -28  (FIXED: Jumps to POLL @02)
+
+// ==========================================
+// TEST 2: JAL & JALR (Switch 2) -> Outputs 2
+// ==========================================
+@0A 00200293 // addi x5,  x0, 2
+@0B 00551C63 // bne  x10, x5, +24  (Skips to Test 3 at @11)
+@0C 00C000EF // jal  x1,  +12      (Jump to subroutine at @0F)
+@0D 0084A023 // sw   x8,  0(x9)    (LEDs = 2)
+@0E E80008E3 // beq  x0,  x0, -48  (FIXED: Jumps to POLL @02)
+@0F 00200413 // addi x8,  x0, 2    (Subroutine: x8 = 2)
+@10 00008067 // jalr x0,  0(x1)    (Return to @0D)
+
+// ==========================================
+// TEST 3: BNE (Switch 4) -> Outputs 4
+// ==========================================
+@11 00400293 // addi x5,  x0, 4
+@12 00551C63 // bne  x10, x5, +24  (Skips to Test 4 at @18)
+@13 00051463 // bne  x10, x0, +8   (4 != 0, jumps over fail state)
+@14 DC0004E3 // beq  x0,  x0, -72  (FIXED: Fail state Jumps to POLL @02)
+@15 00400413 // addi x8,  x0, 4    (PASS: x8 = 4)
+@16 0084A023 // sw   x8,  0(x9)    (LEDs = 4)
+@17 D60006E3 // beq  x0,  x0, -84  (FIXED: Jumps to POLL @02)
+
+// ==========================================
+// TEST 4: LUI (Switch 8) -> Outputs 0xF000
+// ==========================================
+@18 00800293 // addi x5,  x0, 8
+@19 00551863 // bne  x10, x5, +16  (Skips to Default at @1D)
+@1A 0000F437 // lui  x8,  15       (x8 = 0x0000F000)
+@1B 0084A023 // sw   x8,  0(x9)    (Upper 4 LEDs light up)
+@1C CC0004E3 // beq  x0,  x0, -104 (FIXED: Jumps to POLL @02)
+
+// ==========================================
+// DEFAULT (No Switches) -> Clear LEDs
+// ==========================================
+@1D 0004A023 // sw   x0,  0(x9)
+@1E C80008E3 // beq  x0,  x0, -112 (FIXED: Jumps to POLL @02)
+
+// REMAINDER
+@1F 00000013
+@20 00000013
+@21 00000013

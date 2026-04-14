@@ -1,0 +1,55 @@
+// ==========================================
+// PART C: VISUAL ACCUMULATOR (FPGA HARDWARE VERSION)
+// 3-SECOND DELAY FOR HARDWARE DEMO
+// ==========================================
+
+// SETUP
+@00 1FC00113 // addi sp, x0, 508 
+@01 20000493 // addi s1, x0, 512 
+@02 30000913 // addi s2, x0, 768 
+
+// POLL SWITCHES
+@03 00092503 // poll: lw a0, 0(s2)
+@04 FE050EE3 // beq  a0, x0, poll
+@05 00000593 // addi a1, x0, 0     (Initialize accumulator)
+@06 010000EF // jal  ra, sum_func  (Jumps to @0A)
+
+// HALT AND FREEZE FINAL ANSWER
+@07 0000006F // halt: jal x0, 0    (Infinite loop! Processor freezes here)
+@08 00000013 // NOP
+@09 00000013 // NOP
+
+// ==========================================
+// PROCEDURE: sum_func(n, acc)
+// ==========================================
+// Prologue
+@0A FF810113 // sum_func: addi sp, sp, -8
+@0B 00112223 // sw   ra, 4(sp)
+@0C 00A12023 // sw   a0, 0(sp)
+
+// Math & LED Update
+@0D 00A585B3 // add  a1, a1, a0    (Accumulate!)
+@0E 00B4A023 // sw   a1, 0(s1)     (Show on LEDs!)
+
+// Hardware Delay Loop (3-Second Pause)
+@0F 0096F337 // lui  t1, 0x0096F   (RESTORED FOR PHYSICAL HARDWARE!)
+@10 FFF30313 // delay_loop: addi t1, t1, -1
+@11 FE031EE3 // bne  t1, x0, delay_loop
+
+// Base Case Check
+@12 00100293 // addi t0, x0, 1
+@13 00A2D663 // bge  t0, a0, sum_return (Jumps to @16)
+
+// Recursive Step
+@14 FFF50513 // addi a0, a0, -1
+@15 FD4FF0EF // jal  ra, sum_func  (CORRECT MATH: Jumps back -44 bytes to @0A)
+
+// Epilogue & Return
+@16 00012503 // sum_return: lw a0, 0(sp)
+@17 00412083 // lw   ra, 4(sp)
+@18 00810113 // addi sp, sp, 8
+@19 00008067 // jalr x0, 0(ra)
+
+// FILL REMAINDER WITH NOPs
+@1A 00000013
+@1B 00000013
